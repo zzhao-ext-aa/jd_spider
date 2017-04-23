@@ -3,6 +3,7 @@ Scrapy all the smart phone's model name and pricing from http://www.jd.com/ and 
 An asterisk being added after the model name if it's sold by JD 
 
 Usage:
+
 1.Make sure your mac has installed with Firefox(47.0.1) Python(2.7) Scrapy(1.3.3) Selenium(2.53.6) Pycharm
 
 2.Open the project with Pycharm,make sure your virtualenv has including Python Scrapy and Selenium packages:
