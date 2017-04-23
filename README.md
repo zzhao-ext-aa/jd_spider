@@ -11,7 +11,7 @@ Usage:
   
       /tutorial/tutorial/
       
-3.Make sure your python path is correct. if not, run belowed command
+3.Make sure your python path is correct. if not, run following command
       
       export PYTHONPATH=$(pwd)   
       
