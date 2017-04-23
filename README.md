@@ -7,6 +7,7 @@ Usage:
 
 1.Make sure your mac has installed with Firefox(47.0.1) Python(2.6) Scrapy(1.3.3) Selenium(2.53.6)
   
+
 2.Open iterm and go to the below directory
   
       /tutorial/tutorial/
