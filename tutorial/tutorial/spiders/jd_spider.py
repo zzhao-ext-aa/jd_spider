@@ -1,71 +1,62 @@
 #coding: utf-8
 import scrapy
 import csv
-from selenium.webdriver.common.by import By
-from tutorial.settings import ICON, PHONE_NAME
-from selenium import webdriver
-
-reload(__import__('sys')).setdefaultencoding('utf-8')
+from spiders.base_page import set_up_browser, PageOperations
+from phone_info import PhoneInfo
 
 
 class JdSpider(scrapy.Spider):
     name = "jd_phone"
     allowed_domains = ['jd.com']
-    start_urls = ['http://search.jd.com/Search?keyword=%E4%B8%89%E6%98%9F%E6%89%8B%E6%9C%BA&'
-                  'enc=utf-8&wq=%E4%B8%89%E6%98%9F%E6%89%8B%E6%9C%BA&pvid=56ad82a62c574addafc37fc636c8a7db']
+    start_urls = [
+        'https://list.jd.com/list.html?cat=9987,653,655'
+        ]
+    phone_info_list = []
 
     def __init__(self):
-        self.driver = webdriver.Firefox()
-        self.driver.get('https://www.jd.com/')
-        self._reach_phone_page()
-
-    def find_sub_element_by_css(self, selector, elem):
-        return elem.find_element(By.CSS_SELECTOR, selector)
-
-    def _reach_phone_page(self):
-        search_elem = self.driver.find_element_by_css_selector('.form')
-        self.find_sub_element_by_css('#key', search_elem).send_keys(PHONE_NAME.decode('utf-8'))
-        button_elem = self.find_sub_element_by_css('.button', search_elem)
-        button_elem.click()
+        self.driver = set_up_browser()
+        self.operations = PageOperations(self.driver)
 
     def _get_phone_info(self):
-        item_element = self.driver.find_elements_by_css_selector(".goods-list-v2 .gl-i-wrap")
-        item_length = len(item_element)
-        phone_info = []
-        for i in range(item_length):
-            phone_price = self.find_sub_element_by_css(".p-price", item_element[i]).text
-            phone_name = self.find_sub_element_by_css(".p-name em", item_element[i]).text
-            try:
-                if self.find_sub_element_by_css(".goods-icons-img", item_element[i]):
-                    phone_name = "{}{}".format(ICON, phone_name)
-            except:
-                pass
-            print "========================="
-            print phone_name, phone_price
-            print "=========================="
-            phone_info.append({"Model name": phone_name, "Pricing": phone_price})
-        return phone_info
+        container_element = self.operations.find_element_by_css('.goods-list-v2')
+        item_elements = self.operations.find_sub_elements_by_css(".gl-i-wrap", container_element, stop=False)
+        for item_element in item_elements:
+            phone_info = PhoneInfo()
+            phone_info.price = self.operations.find_sub_element_by_css(".p-price strong", item_element).text
+            phone_info.model = self.operations.find_sub_element_by_css(".p-name em", item_element).text
+            phone_info.jd_icon = True if self.operations.find_sub_element_by_css(".p-icons img[data-tips*='京东']",
+                                                                                 item_element, stop=False) else False
+            self.phone_info_list.append(phone_info)
 
-    def csv_export(self, phone_info):
-        with open('result.csv', 'w') as csvfile:
+    def _compose_result(self):
+        result = []
+        for phone_info in self.phone_info_list:
+            result_item = {}
+            icon = "*" if phone_info.jd_icon else " "
+            result_item["Model name"] = u"{}{}".format(phone_info.model, icon)
+            result_item["Pricing"] = phone_info.price
+            result.append(result_item)
+        return result
+
+    def write_to_csv(self):
+        result = self._compose_result()
+        with open('result_phone.csv', 'w') as csvfile:
+            csvfile.write(u'\ufeff'.encode('utf8'))
             field_names = ['Model name', 'Pricing']
             writer = csv.DictWriter(csvfile, fieldnames=field_names)
             writer.writeheader()
-            writer.writerows(phone_info)
+            for item in result:
+                writer.writerow({k: v.encode('utf8') for k, v in item.items()})
             csvfile.close()
 
     def parse(self, response):
         self.driver.get(response.url)
-        info = []
+        self.operations.find_element_by_css('.s-brand a[title*="SAMSUNG"]').click()
         while True:
-            phone_info = self._get_phone_info()
-            info += phone_info
-            self.csv_export(info)
-            try:
-                next_page = self.driver.find_element_by_css_selector(".pn-next")
-                if next_page:
-                    next_page.click()
-                    # self.driver.implicitly_wait(1)
-            except:
+            self._get_phone_info()
+            next_page = self.operations.find_element_by_css(".pn-next", stop=False)
+            if not next_page:
                 break
+            next_page.click()
+        self.write_to_csv()
         self.driver.close()
