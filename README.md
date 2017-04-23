@@ -27,6 +27,6 @@ Usage:
       
       scrapy crawl jd_phone
       
-  you can see the Firefox browser automatically open
+  The Firefox browser will automatically open
   
-6.If the project finished, the Firefox browser automatically shuts down and the CSV file will saved into the current directory,the file is "result_phone.csv"
+6.Once the task finished, the Firefox browser will automatically shut down and the CSV file will save into the current directory, the file name is "result_phone.csv"
