@@ -65,10 +65,9 @@ class JdSpider(scrapy.Spider):
         self.operations.find_element_by_css('.s-brand a[title*="SAMSUNG"]').click()
         while True:
             self._get_phone_info()
-            self.write_to_csv()
             next_page = self.operations.find_element_by_css(".pn-next", stop=False)
             if not next_page:
                 break
             next_page.click()
-        # self.write_to_csv()
+        self.write_to_csv()
         self.driver.close()
