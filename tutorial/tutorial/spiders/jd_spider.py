@@ -3,6 +3,7 @@ import scrapy
 import csv
 from spiders.base_page import set_up_browser, PageOperations
 from phone_info import PhoneInfo
+from settings import JD
 
 
 class JdSpider(scrapy.Spider):
@@ -24,9 +25,19 @@ class JdSpider(scrapy.Spider):
             phone_info = PhoneInfo()
             phone_info.price = self.operations.find_sub_element_by_css(".p-price strong", item_element).text
             phone_info.model = self.operations.find_sub_element_by_css(".p-name em", item_element).text
-            phone_info.jd_icon = True if self.operations.find_sub_element_by_css(".p-icons img[data-tips*='京东']",
-                                                                                 item_element, stop=False) else False
+            phone_info.jd_icon = self._get_jd_icon(item_element)
             self.phone_info_list.append(phone_info)
+
+    def _get_jd_icon(self, item_element):
+        have_jd_icon = False
+        jd_icon = self.operations.find_sub_element_by_css(".p-icons img", item_element, stop=False)
+        if jd_icon:
+            jd_icon_text = jd_icon.get_attribute("data-tips")
+            if jd_icon_text in JD:
+                have_jd_icon = True
+        else:
+            have_jd_icon = False
+        return have_jd_icon
 
     def _compose_result(self):
         result = []
